@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кафе в Харькове</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+</head>
+<body>
+    <h1>Все кафе в Харькове</h1>
+    <a href="{{ url_for('add_cafe') }}">Добавить кафе</a>
+    <a href="{{ url_for('review') }}">Оставить отзыв</a>
+
+    <!-- Здесь будет карта -->
+    <div id="map" style="height: 600px;"></div>
+
+    <!-- Подключаем карту с помощью folium -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([49.9935, 36.2304], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        {% for cafe in cafes %}
+            L.marker([{{ cafe.latitude }}, {{ cafe.longitude }}])
+                .addTo(map)
+                .bindPopup("<b>{{ cafe.name }}</b><br>{{ cafe.address }}<br>Рейтинг: {{ cafe.rating }}");
+        {% endfor %}
+    </script>
+</body>
+</html>

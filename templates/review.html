@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Оставить отзыв</title>
+</head>
+<body>
+    <h1>Оставить отзыв о кафе</h1>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <p>{{ form.cafe_id.label }}: {{ form.cafe_id() }}</p>
+        <p>{{ form.review_text.label }}: {{ form.review_text() }}</p>
+        <button type="submit">Оставить отзыв</button>
+    </form>
+</body>
+</html>
