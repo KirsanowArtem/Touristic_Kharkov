@@ -93,9 +93,14 @@ def review():
             return 'Кафе не найдено!'
     return render_template('review.html', form=form)
 
-
+"""
 if __name__ == '__main__':
     with app.app_context():  # Создаем контекст приложения
         db.create_all()  # Создает все таблицы в базе данных
     app.run(debug=True)
+
+
+"""
+if __name__ == 'main':
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
