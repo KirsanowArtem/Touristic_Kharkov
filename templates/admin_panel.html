@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,15 +11,26 @@
         <h1>Админ-Панель</h1>
         <p>Добро пожаловать, <b>Администратор</b>!</p>
 
-        <h2>Список добавленных мест</h2>
+        <h2>Заявки на добавление мест</h2>
         <div class="places-container">
             {% for place in places %}
                 <div class="place-block">
                     <h3>{{ place.name }}</h3>
-                    <p><b>Адрес:</b> {{ place.address }}</p>
-                    <p><b>Описание:</b> {{ place.description }}</p>
+                    <p><b>Область:</b> {{ place.region }}</p>
                     <p><b>Город:</b> {{ place.city }}</p>
-                    <p><b>Регион:</b> {{ place.region }}</p>
+                    <p><b>Адрес:</b> {{ place.address }}</p>
+                    <p><b>Описание:</b></p>
+                    <pre>{{ place.description }}</pre>
+
+                    <!-- Кнопки для добавления или отклонения -->
+                    <form action="/approve_place" method="POST" style="display: inline;">
+                        <input type="hidden" name="place_id" value="{{ place.id }}">
+                        <button type="submit" name="action" value="approve">Добавить</button>
+                    </form>
+                    <form action="/reject_place" method="POST" style="display: inline;">
+                        <input type="hidden" name="place_id" value="{{ place.id }}">
+                        <button type="submit" name="action" value="reject">Отклонить</button>
+                    </form>
                 </div>
             {% else %}
                 <p>На данный момент нет добавленных мест.</p>
@@ -36,6 +47,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 1rem;
+            justify-content: space-between;
         }
         .place-block {
             border: 1px solid #ccc;
@@ -43,6 +55,7 @@
             border-radius: 8px;
             background-color: #f9f9f9;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex: 1 1 calc(25% - 1rem); /* 4 в строке */
         }
         .place-block h3 {
             margin: 0 0 0.5rem 0;
