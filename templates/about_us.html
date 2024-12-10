@@ -2,12 +2,10 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Туристичний Харків</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>Оставить отзыв</title>
 </head>
 <body>
-
     <nav>
         <a href="/" class="{{ 'active' if request.path == '/' else '' }}">Головна</a>
         <a href="/add_place" class="{{ 'active' if request.path == '/add_place' else '' }}">Додати</a>
@@ -18,12 +16,7 @@
         <a href="/partners" class="{{ 'active' if request.path == '/partners' else '' }}">Партнери</a>
     </nav>
 
-    <h1>Оставить отзыв о кафе</h1>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <p>{{ form.cafe_id.label }}: {{ form.cafe_id() }}</p>
-        <p>{{ form.review_text.label }}: {{ form.review_text() }}</p>
-        <button type="submit">Оставить отзыв</button>
-    </form>
+    <h1>Touristic Kharkov</h1>
+    <p>"Touristic Kharkov" - це проект, розроблений в 2025 році Кірсановим Артемом. Цей проект насамперед був створений для конкурсу МАН і представляє собою карту, на якій можна вибрати потрібні параметри та знайти гарне місце для відпочинку.</p>
 </body>
 </html>

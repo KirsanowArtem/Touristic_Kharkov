@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-Панель</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container1">
+        <h1>Админ-Панель</h1>
+        <p>Добро пожаловать, <b>Администратор</b>!</p>
+
+        <h2>Список добавленных мест</h2>
+        <div class="places-container">
+            {% for place in places %}
+                <div class="place-block">
+                    <h3>{{ place.name }}</h3>
+                    <p><b>Адрес:</b> {{ place.address }}</p>
+                    <p><b>Описание:</b> {{ place.description }}</p>
+                    <p><b>Город:</b> {{ place.city }}</p>
+                    <p><b>Регион:</b> {{ place.region }}</p>
+                </div>
+            {% else %}
+                <p>На данный момент нет добавленных мест.</p>
+            {% endfor %}
+        </div>
+
+        <form action="/logout" method="POST">
+            <button type="submit">Выйти</button>
+        </form>
+    </div>
+
+    <style>
+        .places-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .place-block {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .place-block h3 {
+            margin: 0 0 0.5rem 0;
+        }
+        .place-block p {
+            margin: 0.5rem 0;
+        }
+    </style>
+</body>
+</html>

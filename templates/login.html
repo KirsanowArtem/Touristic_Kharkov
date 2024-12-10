@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <nav>
+        <a href="/" class="{{ 'active' if request.path == '/' else '' }}">Головна</a>
+        <a href="/add_place" class="{{ 'active' if request.path == '/add_place' else '' }}">Додати</a>
+        <a href="/review" class="{{ 'active' if request.path == '/review' else '' }}">Написати відгук</a>
+        <a href="/login" class="{{ 'active' if request.path == '/login' else '' }}">Увійти</a>
+        <a href="/signup" class="{{ 'active' if request.path == '/signup' else '' }}">Зарееструватись</a>
+        <a href="/about_us" class="{{ 'active' if request.path == '/about_us' else '' }}">Про нас</a>
+        <a href="/partners" class="{{ 'active' if request.path == '/partners' else '' }}">Партнери</a>
+        <a href="/request_places"
+           style="{% if session.get('username') == 'Kirsanov Artem' %}display: block;{% else %}display: none;{% endif %}">
+           Присоединить
+        </a>
+
+    </nav>
+
+    <div class="container1">
+        <h1>Авторизация</h1>
+
+
+        <form action="/login" method="POST">
+            <input type="text"
+                   name="username"
+                   placeholder="Имя пользователя"
+                   class="{% if error_username %}error{% endif %}"
+                   value="{{ request.form.username }}">
+
+            <div class="input-wrapper">
+                <input type="password"
+                       name="password"
+                       id="password"
+                       placeholder="Пароль"
+                       class="{% if error_password %}error{% endif %}"
+                       value="{{ request.form.password }}">
+                <span class="eye-icon" onclick="togglePasswordVisibility('password')">◉</span>
+            </div>
+
+            <button type="submit">Войти</button>
+        </form>
+
+        <form action="/signup" method="GET">
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="message-container">
+                    {% for category, message in messages %}
+                        <p class="{{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+        function togglePasswordVisibility(id) {
+            var passwordField = document.getElementById(id);
+            var eyeIcon = document.querySelector('.eye-icon');
+
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                eyeIcon.textContent = "◎";
+            } else {
+                passwordField.type = "password";
+                eyeIcon.textContent = "◉";
+            }
+        }
+    </script>
+</body>
+</html>

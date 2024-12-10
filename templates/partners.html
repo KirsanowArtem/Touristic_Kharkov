@@ -2,9 +2,8 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <title>Оставить отзыв</title>
+    <title>Title</title>
 </head>
 <body>
 
@@ -18,12 +17,6 @@
         <a href="/partners" class="{{ 'active' if request.path == '/partners' else '' }}">Партнери</a>
     </nav>
 
-    <h1>Оставить отзыв о кафе</h1>
-    <form method="POST">
-        {{ form.hidden_tag() }}
-        <p>{{ form.cafe_id.label }}: {{ form.cafe_id() }}</p>
-        <p>{{ form.review_text.label }}: {{ form.review_text() }}</p>
-        <button type="submit">Оставить отзыв</button>
-    </form>
+    <h1>Touristic Kharkov</h1>
 </body>
 </html>

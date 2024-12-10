@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Авторизация Администратора</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container1">
+        <h1>Админ-Панель</h1>
+        <form action="/admin" method="POST">
+            <div class="input-wrapper">
+                <input type="password" name="password" id="password" placeholder="Введите пароль" required>
+                <span class="eye-icon" onclick="togglePasswordVisibility('password')">◉</span>
+            </div>
+            <button type="submit">Подтвердить</button>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                    {% for category, message in messages %}
+                        <li style="color: red; font-weight: bold; text-align: center;">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+        function togglePasswordVisibility(id) {
+            var passwordField = document.getElementById(id);
+            var eyeIcon = document.querySelector('.eye-icon');
+
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                eyeIcon.textContent = "◎";
+            } else {
+                passwordField.type = "password";
+                eyeIcon.textContent = "◉";
+            }
+        }
+    </script>
+</body>
+</html>

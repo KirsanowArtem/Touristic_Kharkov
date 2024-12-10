@@ -1,23 +1,104 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кафе в Харькове</title>
+    <title>Карта кафе в Харькове</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+            position: relative;
+        }
+
+        /* Кнопки масштабирования и текущего местоположения */
+        .custom-controls {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+        }
+
+        .custom-controls button {
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .custom-controls button:hover {
+            background-color: #f0f0f0;
+        }
+
+        .custom-controls button:active {
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Статический синий круг местоположения */
+        .user-location {
+            width: 12px;
+            height: 12px;
+            background-color: #007AFF;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 122, 255, 0.7);
+        }
+        nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: #d3d3d3;
+            padding: 15px;
+            border-radius: 15px;
+            margin: 20px;
+        }
+        nav a {
+            padding: 10px 20px;
+            text-decoration: none;
+            color: black;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+        nav a.active {
+            background-color: #a9a9a9;
+            border-radius: 10px;
+        }
+        nav a:hover {
+            background-color: #c0c0c0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Все кафе в Харькове</h1>
-    <a href="{{ url_for('add_cafe') }}">Добавить кафе</a>
-    <a href="{{ url_for('review') }}">Оставить отзыв</a>
+    <nav>
+        <a href="/" class="{{ 'active' if request.path == '/' else '' }}">Головна</a>
+        <a href="/add_place" class="{{ 'active' if request.path == '/add_place' else '' }}">Додати</a>
+        <a href="/review" class="{{ 'active' if request.path == '/review' else '' }}">Написати відгук</a>
+        <a href="/login" class="{{ 'active' if request.path == '/login' else '' }}">Увійти</a>
+        <a href="/signup" class="{{ 'active' if request.path == '/signup' else '' }}">Зарееструватись</a>
+        <a href="/about_us" class="{{ 'active' if request.path == '/about_us' else '' }}">Про нас</a>
+        <a href="/partners" class="{{ 'active' if request.path == '/partners' else '' }}">Партнери</a>
+    </nav>
+    <div id="map"></div>
 
-    <!-- Здесь будет карта -->
-    <div id="map" style="height: 600px;"></div>
+    <div class="custom-controls">
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">−</button>
+        <button id="locate-btn">🔘</button>
+    </div>
 
-    <!-- Подключаем карту с помощью folium -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <script>
-        var map = L.map('map').setView([49.9935, 36.2304], 12);
+        var map = L.map('map', {
+            zoomControl: false
+        }).setView([49.9935, 36.2304], 12);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -28,6 +109,49 @@
                 .addTo(map)
                 .bindPopup("<b>{{ cafe.name }}</b><br>{{ cafe.address }}<br>Рейтинг: {{ cafe.rating }}");
         {% endfor %}
+
+        // місцеположення
+        var userMarker;
+
+        function locateUser() {
+            if (!navigator.geolocation) {
+                alert('Ваш браузер не підтримує геолокацію.');
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var lat = position.coords.latitude;
+                var lon = position.coords.longitude;
+
+                if (userMarker) {
+                    map.removeLayer(userMarker);
+                }
+
+                userMarker = L.marker([lat, lon], {
+                    icon: L.divIcon({
+                        className: 'user-location'
+                    })
+                }).addTo(map);
+
+                map.setView([lat, lon], 15);
+            }, function(error) {
+                alert('Не вдалось визначити місце положення: ' + error.message);
+            });
+        }
+
+        // Кнопки маштабування
+        document.getElementById('zoom-in').addEventListener('click', function() {
+            map.zoomIn();
+        });
+
+        document.getElementById('zoom-out').addEventListener('click', function() {
+            map.zoomOut();
+        });
+
+        // Кнопка місцезнаходження
+        document.getElementById('locate-btn').addEventListener('click', locateUser);
+
+        locateUser();
     </script>
 </body>
 </html>

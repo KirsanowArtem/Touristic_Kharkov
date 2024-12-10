@@ -1,0 +1,233 @@
+/* Основний стиль для сторінки */
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+    background-color: #f4f4f4; /* Светло-сірий2 */
+}
+
+/* Контейнер з фиксованою шириною */
+.container1 {
+    text-align: center;
+    width: 400px;
+    padding: 20px;
+    background-color: #fff; /* Білий */
+    border-radius: 10px; /* Закругленні кути */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Контейнер для мапи */
+.container2 {
+    text-align: center;
+    width: 90%;
+    height: 90%;
+    padding: 40px;
+    background-color: #fff; /* Білий */
+    border-radius: 10px; /* Закругленні кути */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+/* Стиль для полей вводу */
+input {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px; /* Закруглені кути */
+    border: 1px solid #ccc; /* Світло-сірий */
+}
+
+/* Стиль для Помилок */
+input.error, select.error, textarea.error {
+    border-color: red; /* Подсветка красным */
+    background-color: #ffe6e6; /* Светло-красный фон */
+}
+
+
+/* Поле вводу пароля */
+input[type="password"] {
+    position: relative;
+}
+
+/* Обертка для поля з паролем */
+.input-wrapper {
+    position: relative;
+}
+
+/* Іконка кругу для видимосі паролю */
+.eye-icon {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    cursor: pointer; /* Показник миші при наводжені */
+    font-size: 18px;
+}
+
+/* Загальний стиль для кнопок */
+button {
+    width: 85%;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #4CAF50; /* Зеленый */
+    border: none;
+    color: white; /* Білий */
+    border-radius: 5px; /* Закругленні кути */
+    cursor: pointer; /* Показник миші при наводжені */
+}
+
+/* Стиль кнопки при наводженні */
+button:hover {
+    background-color: #45a011; /* Зелений2 */
+}
+
+/* Посилання */
+a {
+    text-decoration: none;
+    color: #45a011; /* Зелений */
+}
+
+/* Посилання при наводженні */
+a:hover {
+    text-decoration: underline;
+}
+
+/* Список без маркерів */
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+/* Єлементи списку */
+ul li {
+    color: red; /* Червоний */
+    font-weight: bold;
+}
+
+/* Контейнери з редагуванням тексту */
+.editable-container {
+    text-align: center;
+    width: 300px;
+    padding: 20px;
+    background-color: #fff; /* Білий фон */
+    border-radius: 10px; /* Закруглені кути */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border: 2px solid #4CAF50; /* Зеленый */
+}
+
+/* Контейнери */
+.editable-container[contenteditable="true"] {
+    border: 2px dashed #4CAF50; /* Пунктирний бордер */
+}
+
+/* <h2> в контейнері */
+.editable-container h2 {
+    font-size: 18px; /* Размер текста */
+    margin-bottom: 10px; /* Отступ снизу */
+}
+
+/* <p> в контейнері */
+.editable-container p {
+    font-size: 14px;
+    color: #555; /* Темно сірий */
+}
+
+/* Вивід помилок */
+.error {
+    font-size: 14px;
+    color: #ff0000;
+}
+
+/* Повідомлення по центру */
+.centered-message {
+    text-align: center;
+    font-size: 35px;
+    margin: 20px 0;
+    font-weight: bold;
+}
+
+/*Поле вибору  */
+select {
+    width: 85%;
+    padding: 10px;
+    border-radius: 5px; /* Закруглені кути */
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+/* Багатострочне поле вводу */
+textarea {
+    height: 60px;
+    resize: none;
+    width: 80%;
+    padding: 10px;
+    border-radius: 5px; /* Закруглені кути */
+    border: 1px solid #ccc;
+}
+
+/* Зірки */
+.rating-buttons input {
+    display: none;
+}
+
+.rating-buttons label {
+    font-size: 30px;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: color 0.3s;
+}
+
+.rating-buttons input:checked + label {
+    color: gold;
+}
+
+.rating-buttons label:hover {
+    color: gold;
+}
+
+/* Підсвітка зірок */
+.rating-buttons label {
+    color: gray;
+}
+
+.rating-buttons input:not(:checked) + label:hover {
+    color: gold;
+}
+
+.rating-buttons input:checked + label,
+.rating-buttons input:checked + label ~ label {
+    color: gold;
+}
+
+nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    background-color: #d3d3d3;
+    padding: 15px;
+    border-radius: 15px;
+    margin: 20px;
+}
+nav a {
+    padding: 10px 20px;
+    text-decoration: none;
+    color: black;
+    border-radius: 10px;
+    transition: background-color 0.3s;
+}
+nav a.active {
+    background-color: #a9a9a9;
+    border-radius: 10px;
+}
+nav a:hover {
+    background-color: #c0c0c0;
+}

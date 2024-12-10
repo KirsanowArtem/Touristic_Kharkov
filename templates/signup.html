@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="/" class="{{ 'active' if request.path == '/' else '' }}">Головна</a>
+        <a href="/add_place" class="{{ 'active' if request.path == '/add_place' else '' }}">Додати</a>
+        <a href="/review" class="{{ 'active' if request.path == '/review' else '' }}">Написати відгук</a>
+        <a href="/login" class="{{ 'active' if request.path == '/login' else '' }}">Увійти</a>
+        <a href="/signup" class="{{ 'active' if request.path == '/signup' else '' }}">Зарееструватись</a>
+        <a href="/about_us" class="{{ 'active' if request.path == '/about_us' else '' }}">Про нас</a>
+        <a href="/partners" class="{{ 'active' if request.path == '/partners' else '' }}">Партнери</a>
+    </nav>
+
+    <div class="container1">
+        <h1>Регистрация</h1>
+        <form action="/signup " method="POST">
+            <input type="text" name="username" placeholder="Имя пользователя"
+                class="{% if error_username %}error{% endif %}" value="{{ request.form.username }}">
+            <div class="input-wrapper">
+                <input type="password" name="password" id="password" placeholder="Пароль"
+                       class="{% if error_password %}error{% endif %}">
+                <span class="eye-icon" onclick="togglePasswordVisibility('password')">◉</span>
+            </div>
+            <div class="input-wrapper">
+                <input type="password" name="confirm_password" id="confirm_password" placeholder="Подтвердите пароль"
+                       class="{% if error_confirm_password %}error{% endif %}">
+                <span class="eye-icon" onclick="togglePasswordVisibility('confirm_password')">◉</span>
+            </div>
+            <input type="email" name="email" placeholder="Email"
+                   class="{% if error_email %}error{% endif %}" value="{{ request.form.email }}">
+            <button type="submit" class="btn">Зарегистрироваться</button>
+        </form>
+
+        <form action="/login" method="GET">
+            <button type="submit" class="btn">Войти</button>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul>
+                    {% for category, message in messages %}
+                        <li style="color: red; font-weight: bold; text-align: center;">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+        function togglePasswordVisibility(id) {
+            var passwordField = document.getElementById(id);
+            var eyeIcon = document.querySelector(`#${id} + .eye-icon`);
+
+            if (passwordField.type === "password") {
+                passwordField.type = "text";
+                eyeIcon.textContent = "◎";
+            } else {
+                passwordField.type = "password";
+                eyeIcon.textContent = "◉";
+            }
+        }
+    </script>
+</body>
+</html>

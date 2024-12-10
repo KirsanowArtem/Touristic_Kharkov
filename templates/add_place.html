@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Додати кафе</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <nav>
+        <a href="/" class="{{ 'active' if request.path == '/' else '' }}">Головна</a>
+        <a href="/add_place" class="{{ 'active' if request.path == '/add_place' else '' }}">Додати</a>
+        <a href="/review" class="{{ 'active' if request.path == '/review' else '' }}">Написати відгук</a>
+        <a href="/login" class="{{ 'active' if request.path == '/login' else '' }}">Увійти</a>
+        <a href="/signup" class="{{ 'active' if request.path == '/signup' else '' }}">Зарееструватись</a>
+        <a href="/about_us" class="{{ 'active' if request.path == '/about_us' else '' }}">Про нас</a>
+        <a href="/partners" class="{{ 'active' if request.path == '/partners' else '' }}">Партнери</a>
+        <a href="/request_places?" class="{{ 'active' if request.path == '/request_places?' else '' }}"
+            style="{% if session.get('username') == 'Kirsanov Artem' %}display: block;{% else %}display: none;{% endif %}">
+            Присоединить
+        </a>
+
+
+    </nav>
+
+    <div class="container1">
+        <h1>Додати новий заклад</h1>
+
+        <form action="/add_place" method="POST">
+            {{ form.hidden_tag() }}
+
+            <p>
+                <select id="region" name="region" class="{{ 'error' if error_region else '' }}">
+                    <option value="" disabled {% if not form.region.data %} selected {% endif %}>Оберіть область</option>
+                    <option value="Харківська" class="{% if form.region.data == 'Харківська' %}selected{% endif %}">Харківська</option>
+                </select>
+
+                <select id="city" name="city" class="{{ 'error' if error_city else '' }}">
+                    <option value="" disabled {% if not form.city.data %} selected {% endif %}>Оберіть місто</option>
+                    <option value="Харків" class="{% if form.city.data == 'Харків' %}selected{% endif %}">Харків</option>
+                    <option value="Ізюм" class="{% if form.city.data == 'Ізюм' %}selected{% endif %}">Ізюм</option>
+                    <option value="Лозова" class="{% if form.city.data == 'Лозова' %}selected{% endif %}">Лозова</option>
+                </select>
+
+                <select id="type" name="type" class="{{ 'error' if error_type else '' }}">
+                    <option value="" disabled {% if not form.type.data %} selected {% endif %}>Оберіть тип закладу</option>
+                    <option value="кафе" class="{% if form.type.data == 'кафе' %}selected{% endif %}">Кафе</option>
+                    <option value="ресторан" class="{% if form.type.data == 'ресторан' %}selected{% endif %}">Ресторан</option>
+                </select>
+
+                <input id="name"
+                       type="text"
+                       name="name"
+                       placeholder="Назва закладу"
+                       class="{{ 'error' if error_name else '' }}"
+                       value="{{ form.name.data or '' }}">
+
+                <input id="address"
+                       type="text"
+                       name="address"
+                       placeholder="Адреса"
+                       class="{{ 'error' if error_address else '' }}"
+                       value="{{ form.address.data or '' }}">
+
+                <textarea id="description"
+                          name="description"
+                          placeholder="Опис закладу"
+                          class="{{ 'error' if error_description else '' }}">{{ form.description.data or '' }}</textarea>
+
+            </p>
+
+            <button type="submit">Додати заклад</button>
+        </form>
+
+        <form action="/" method="GET">
+            <button type="submit">Назад</button>
+        </form>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="message-container">
+                    {% for category, message in messages %}
+                        <p class="{{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <script>
+        const stars = document.querySelectorAll('.rating-buttons label');
+        stars.forEach((star, index) => {
+            star.addEventListener('mouseover', () => {
+                for (let i = 0; i <= index; i++) {
+                    stars[i].style.color = 'gold';
+                }
+            });
+
+            star.addEventListener('mouseout', () => {
+                for (let i = 0; i <= index; i++) {
+                    stars[i].style.color = 'gray';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
