@@ -9,9 +9,9 @@
 <body>
     <div class="container1">
         <h1>Админ-Панель</h1>
-        <p>Добро пожаловать, <b>Администратор</b>!</p>
+        <p>Кафе</p>
 
-        <h2>Заявки на добавление мест</h2>
+        <h2>Список кафе</h2>
         <div class="places-container">
             {% for place in places %}
                 <div class="place-block">
@@ -21,19 +21,18 @@
                     <p><b>Адрес:</b> {{ place.address }}</p>
                     <p><b>Описание:</b></p>
                     <pre>{{ place.description }}</pre>
+                    <p><b>Индекс:</b> {{ place.place_index }}</p>
+                    <p><b>Тип:</b> {{ place.type }}</p>
 
-                    <!-- Кнопки для добавления или отклонения -->
-                    <form action="/approve_place" method="POST" style="display: inline;">
-                        <input type="hidden" name="place_id" value="{{ place.id }}">
-                        <button type="submit" name="action" value="approve">Добавить</button>
-                    </form>
+                    <!-- Кнопка для отклонения -->
                     <form action="/reject_place" method="POST" style="display: inline;">
                         <input type="hidden" name="place_id" value="{{ place.id }}">
+                        <input type="hidden" name="category" value="Кафе">
                         <button type="submit" name="action" value="reject">Отклонить</button>
                     </form>
                 </div>
             {% else %}
-                <p>На данный момент нет добавленных мест.</p>
+                <p>На данный момент нет добавленных кафе.</p>
             {% endfor %}
         </div>
 

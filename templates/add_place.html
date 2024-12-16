@@ -5,6 +5,45 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Додати кафе</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const messages = document.querySelectorAll('.flash-message');
+            messages.forEach(msg => {
+                setTimeout(() => {
+                    msg.style.opacity = '0';
+                    setTimeout(() => msg.remove(), 1000); // Удаление через 1 секунду
+                }, 3000); // Время до начала скрытия
+            });
+        });
+    </script>
+    <style>
+        .flash-container {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            z-index: 9999;
+            max-width: 300px;
+        }
+
+        .flash-message {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            opacity: 1;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .flash-message.error {
+            background-color: #f44336;
+        }
+
+        .flash-message.success {
+            background-color: #4caf50;
+        }
+    </style>
 </head>
 <body>
     <nav>
@@ -19,8 +58,6 @@
             style="{% if session.get('username') == 'Kirsanov Artem' %}display: block;{% else %}display: none;{% endif %}">
             Присоединить
         </a>
-
-
     </nav>
 
     <div class="container1">
@@ -66,7 +103,6 @@
                           name="description"
                           placeholder="Опис закладу"
                           class="{{ 'error' if error_description else '' }}">{{ form.description.data or '' }}</textarea>
-
             </p>
 
             <button type="submit">Додати заклад</button>
@@ -75,33 +111,17 @@
         <form action="/" method="GET">
             <button type="submit">Назад</button>
         </form>
+    </div>
 
+    <!-- Всплывающие уведомления -->
+    <div class="flash-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="message-container">
-                    {% for category, message in messages %}
-                        <p class="{{ category }}">{{ message }}</p>
-                    {% endfor %}
-                </div>
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
             {% endif %}
         {% endwith %}
     </div>
-
-    <script>
-        const stars = document.querySelectorAll('.rating-buttons label');
-        stars.forEach((star, index) => {
-            star.addEventListener('mouseover', () => {
-                for (let i = 0; i <= index; i++) {
-                    stars[i].style.color = 'gold';
-                }
-            });
-
-            star.addEventListener('mouseout', () => {
-                for (let i = 0; i <= index; i++) {
-                    stars[i].style.color = 'gray';
-                }
-            });
-        });
-    </script>
 </body>
 </html>

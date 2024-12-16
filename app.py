@@ -51,7 +51,8 @@ def init_db():
             description TEXT,
             city TEXT NOT NULL,
             region TEXT NOT NULL,
-            place_index TEXT NOT NULL
+            place_index TEXT NOT NULL,
+            type TEXT NOT NULL
         )
     ''')
 
@@ -64,7 +65,8 @@ def init_db():
             description TEXT,
             city TEXT NOT NULL,
             region TEXT NOT NULL,
-            place_index TEXT NOT NULL
+            place_index TEXT NOT NULL,
+            type TEXT NOT NULL
         )
     ''')
 
@@ -169,10 +171,9 @@ def index():
     m.save("templates/map.html")
     return render_template('index.html', cafes=cafes)
 
-
 @app.route('/add_place', methods=['GET', 'POST'])
 def add_place():
-    form = CafeForm()  # Создаём объект формы
+    form = CafeForm()
 
     if form.validate_on_submit():
         name = form.name.data
@@ -182,18 +183,25 @@ def add_place():
         region = form.region.data
         type_place = form.type.data
 
-        # Добавляем данные в таблицу request
-        conn = sqlite3.connect('cafes.db')
-        cursor = conn.cursor()
-        cursor.execute('INSERT INTO request (name, address, description, city, region, type) VALUES (?, ?, ?, ?, ?, ?)',
-                       (name, address, description, city, region, type_place))
-        conn.commit()
-        conn.close()
+        try:
+            conn = sqlite3.connect('cafes.db', timeout=10)
+            cursor = conn.cursor()
+            # Исключаем place_index из запроса
+            cursor.execute(
+                'INSERT INTO request (name, address, description, city, region, type) VALUES (?, ?, ?, ?, ?, ?)',
+                (name, address, description, city, region, type_place)
+            )
+            conn.commit()
+            flash('Место успешно добавлено в список на одобрение!', 'success')
+        except sqlite3.IntegrityError as e:
+            flash(f'Ошибка базы данных: {e}', 'error')
+        finally:
+            conn.close()
 
-        flash('Место успешно добавлено в список на одобрение!', 'success')
         return redirect(url_for('index'))
 
     return render_template('add_place.html', form=form)
+
 
 
 @app.route('/approve_place', methods=['POST'])
@@ -220,11 +228,11 @@ def approve_place():
         # Добавление в соответствующую таблицу (cafes или restaurants)
         if place[5] == 'кафе':
             cursor.execute(
-                "INSERT INTO cafes (name, address, description, city, region, index) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO cafes (name, address, description, city, region, place_index) VALUES (?, ?, ?, ?, ?, ?)",
                 (place[0], place[1], place[2], place[3], place[4], place_index))
         else:
             cursor.execute(
-                "INSERT INTO restaurants (name, address, description, city, region, index) VALUES (?, ?, ?, ?, ?, ?)",
+                "INSERT INTO restaurants (name, address, description, city, region, place_index) VALUES (?, ?, ?, ?, ?, ?)",
                 (place[0], place[1], place[2], place[3], place[4], place_index))
 
         # Удаляем место из таблицы request
@@ -361,16 +369,27 @@ def request_places():
 @app.route('/reject_place', methods=['POST'])
 def reject_place():
     place_id = request.form['place_id']
+    category = request.form.get('category')
 
-    # Удаляем запись из таблицы request
+    # Подключаемся к базе данных
     conn = sqlite3.connect('cafes.db')
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM request WHERE id=?", (place_id,))
+
+    # Удаляем запись в зависимости от категории
+    if category == "Кафе":
+        cursor.execute("DELETE FROM cafes WHERE id=?", (place_id,))
+    elif category == "Ресторан":
+        cursor.execute("DELETE FROM restaurants WHERE id=?", (place_id,))
+    else:
+        flash('Неверная категория.', 'error')
+        return redirect(url_for('admin', category=category))
+
     conn.commit()
     conn.close()
 
-    flash('Запрос успешно отклонен.', 'success')
-    return redirect(url_for('admin'))
+    flash('Запись успешно удалена.', 'success')
+    return redirect(url_for('admin', category=category))
+
 
 @app.route('/approve_place', methods=['POST'])
 def approve_place_handler():
@@ -427,33 +446,85 @@ def show_users():
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
-    if request.method == 'POST':
+    if request.method == 'POST':  # Обработка входа
         password = request.form['password']
         if password == "12":
-            conn = sqlite3.connect('cafes.db')
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM request")
-            places = cursor.fetchall()
-
-            app.logger.debug(f"Fetched places from request: {places}")  # Добавлено для логирования
-
-            conn.close()
-            return render_template('admin_panel.html', places=[
-                {
-                    "id": place[0],
-                    "name": place[1],
-                    "address": place[2],
-                    "description": place[3],
-                    "city": place[4],
-                    "region": place[5]
-                }
-                for place in places
-            ])
+            # Успешный вход — перенаправляем на страницу с запросами
+            return redirect(url_for('admin', request="Запросы"))
         else:
             flash('Неверный пароль!', 'error')
-            return redirect(url_for('admin'))
+            return render_template('admin_login.html')
 
-    return render_template('admin_login.html')
+    # Обработка GET запросов
+    category = request.args.get('category')  # Читаем категорию
+    request_type = request.args.get('request')  # Читаем тип запроса
+
+
+    # Показываем запросы, если request_type указан
+    if category == "Запросы":
+        conn = sqlite3.connect('cafes.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, address, description, city, region FROM request")
+        places = cursor.fetchall()
+        conn.close()
+        return render_template('admin_panel.html', places=[
+            {
+                "id": place[0],
+                "name": place[1],
+                "address": place[2],
+                "description": place[3],
+                "city": place[4],
+                "region": place[5]
+            }
+            for place in places
+        ])
+
+    # Обработка категории "Кафе"
+    if category == "Кафе":
+        conn = sqlite3.connect('cafes.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, address, description, city, region, place_index, type FROM cafes")
+        places = cursor.fetchall()
+        conn.close()
+        return render_template('admin_cafe.html', places=[
+            {
+                "id": place[0],
+                "name": place[1],
+                "address": place[2],
+                "description": place[3],
+                "city": place[4],
+                "region": place[5],
+                "place_index": place[6],
+                "type": place[7]
+            }
+            for place in places
+        ])
+
+    # Обработка категории "Рестораны"
+
+    if category == "Ресторан":
+        conn = sqlite3.connect('cafes.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, name, address, description, city, region, place_index, type FROM restaurants")
+        places = cursor.fetchall()
+        conn.close()
+        return render_template('admin_restaurant.html', places=[
+            {
+                "id": place[0],
+                "name": place[1],
+                "address": place[2],
+                "description": place[3],
+                "city": place[4],
+                "region": place[5],
+                "place_index": place[6],
+                "type": place[7]
+            }
+            for place in places
+        ])
+
+    # Если ничего не выбрано, возвращаем меню
+    return render_template('admin_menu.html')
+
 
 @app.route('/debug_users')
 def debug_users():
@@ -465,6 +536,7 @@ def debug_users():
     return "<br>".join([f"ID: {user[0]}, Username: {user[1]}, Email: {user[3]}" for user in users])
 
 """
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
@@ -477,5 +549,4 @@ if __name__ == '__main__':
     init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
 

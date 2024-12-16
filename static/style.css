@@ -231,3 +231,31 @@ nav a.active {
 nav a:hover {
     background-color: #c0c0c0;
 }
+
+/*Вспливаючі повідомлення*/
+
+.flash-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+}
+
+.flash-message {
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    opacity: 1;
+    transition: opacity 1s ease-in-out;
+}
+
+.flash-message.error {
+    background-color: #f44336;
+}
+
+.flash-message.success {
+    background-color: #4caf50;
+}
