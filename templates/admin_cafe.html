@@ -36,32 +36,22 @@
             {% endfor %}
         </div>
 
-        <form action="/admin?" method="POST">
-            <button type="submit">Выйти</button>
-        </form>
     </div>
 
-    <style>
-        .places-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            justify-content: space-between;
-        }
-        .place-block {
-            border: 1px solid #ccc;
-            padding: 1rem;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            flex: 1 1 calc(25% - 1rem); /* 4 в строке */
-        }
-        .place-block h3 {
-            margin: 0 0 0.5rem 0;
-        }
-        .place-block p {
-            margin: 0.5rem 0;
-        }
-    </style>
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <form action="/admin" method="GET" style="margin-top: 20px;">
+        <input type="hidden" name="category" value="Меню">
+        <button type="submit" class="menu-button">Меню</button>
+    </form>
+
 </body>
 </html>

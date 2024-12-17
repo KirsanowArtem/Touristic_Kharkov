@@ -232,6 +232,30 @@ nav a:hover {
     background-color: #c0c0c0;
 }
 
+/*Меню*/
+
+.places-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+}
+.place-block {
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex: 1 1 calc(25% - 1rem); /* 4 в строке */
+}
+.place-block h3 {
+    margin: 0 0 0.5rem 0;
+}
+.place-block p {
+    margin: 0.5rem 0;
+}
+
+
 /*Вспливаючі повідомлення*/
 
 .flash-container {
@@ -239,6 +263,7 @@ nav a:hover {
     top: 10px;
     right: 10px;
     z-index: 9999;
+    max-width: 300px;
 }
 
 .flash-message {
@@ -259,3 +284,35 @@ nav a:hover {
 .flash-message.success {
     background-color: #4caf50;
 }
+
+
+
+/* Стили для кнопки */
+.menu-button {
+    display: block; /* Делает кнопку блочным элементом */
+    width: 100%; /* Растягивает кнопку на 100% ширины контейнера */
+    background-color: #4caf50;
+    color: white;
+    padding: 15px 20px;
+    font-size: 18px;
+    text-align: center;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    box-sizing: border-box; /* Учитывает padding в ширине */
+}
+
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const messages = document.querySelectorAll('.flash-message');
+        messages.forEach(msg => {
+            setTimeout(() => {
+                msg.style.opacity = '0';
+                setTimeout(() => msg.remove(), 1000);
+            }, 3000);
+        });
+    });
+</script>

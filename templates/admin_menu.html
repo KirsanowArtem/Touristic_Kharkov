@@ -38,5 +38,16 @@
         <a href="/admin?category=Ресторан" class="menu-button">Ресторан</a>
         <a href="/admin?category=Запросы" class="menu-button">Запросы</a>
     </div>
+
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
 </body>
 </html>

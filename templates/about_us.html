@@ -15,6 +15,16 @@
         <a href="/about_us" class="{{ 'active' if request.path == '/about_us' else '' }}">Про нас</a>
         <a href="/partners" class="{{ 'active' if request.path == '/partners' else '' }}">Партнери</a>
     </nav>
+    <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+
 
     <h1>Touristic Kharkov</h1>
     <p>"Touristic Kharkov" - це проект, розроблений в 2025 році Кірсановим Артемом. Цей проект насамперед був створений для конкурсу МАН і представляє собою карту, на якій можна вибрати потрібні параметри та знайти гарне місце для відпочинку.</p>
