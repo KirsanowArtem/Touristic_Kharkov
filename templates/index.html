@@ -52,6 +52,7 @@
             border-radius: 50%;
             box-shadow: 0 0 10px rgba(0, 122, 255, 0.7);
         }
+
         nav {
             display: flex;
             justify-content: space-around;
@@ -60,6 +61,7 @@
             border-radius: 15px;
             margin: 20px;
         }
+
         nav a {
             padding: 10px 20px;
             text-decoration: none;
@@ -67,10 +69,12 @@
             border-radius: 10px;
             transition: background-color 0.3s;
         }
+
         nav a.active {
             background-color: #a9a9a9;
             border-radius: 10px;
         }
+
         nav a:hover {
             background-color: #c0c0c0;
         }
@@ -104,7 +108,6 @@
         {% endwith %}
     </div>
 
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/leaflet.js"></script>
     <script>
         var map = L.map('map', {
@@ -115,13 +118,25 @@
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
+        // Путь к иконке чашки кофе
+        var coffeeIcon = L.icon({
+            iconUrl: '/static/coffee-cup.png',  // Укажите путь к вашему значку
+            iconSize: [32, 32],  // Размер значка
+            iconAnchor: [16, 32],  // Центр значка
+            popupAnchor: [0, -32]  // Позиция всплывающего окна
+        });
+
         {% for cafe in cafes %}
-            L.marker([{{ cafe.latitude }}, {{ cafe.longitude }}])
-                .addTo(map)
-                .bindPopup("<b>{{ cafe.name }}</b><br>{{ cafe.address }}<br>Рейтинг: {{ cafe.rating }}");
+            {% if cafe.latitude and cafe.longitude %}
+                L.marker([{{ cafe.latitude }}, {{ cafe.longitude }}], { icon: coffeeIcon })
+                    .addTo(map)
+                    .bindPopup("<b>{{ cafe.name }}</b><br>{{ cafe.address }}<br>Рейтинг: {{ cafe.rating }}");
+            {% else %}
+                console.log('Координаты отсутствуют для кафе: {{ cafe.name }}');
+            {% endif %}
         {% endfor %}
 
-        // місцеположення
+        // Місцеположення
         var userMarker;
 
         function locateUser() {
@@ -164,5 +179,6 @@
 
         locateUser();
     </script>
+
 </body>
 </html>

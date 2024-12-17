@@ -1,17 +1,26 @@
 import logging
 import os
 import sqlite3
+import folium
+import time
+
 from datetime import datetime
 
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
+
 from wtforms import StringField, IntegerField, TextAreaField
 from wtforms.fields.choices import SelectField
 from wtforms.fields.simple import SubmitField
 from wtforms.validators import DataRequired
-import folium
+
+from geopy.exc import GeocoderTimedOut
 from geopy.geocoders import Nominatim
+
+
+from folium.plugins import MarkerCluster
+
 
 app = Flask(__name__)
 app.logger.setLevel(logging.DEBUG)
@@ -24,6 +33,9 @@ db = SQLAlchemy(app)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "cafes.db")
 USERS_DB_PATH = os.path.join(BASE_DIR, "users.db")
+
+geolocator = Nominatim(user_agent="your_app_name", timeout=10)
+
 
 def init_db():
     # Создание таблицы пользователей
@@ -100,7 +112,7 @@ class Cafe(db.Model):
 
 
 # Форма для добавления кафе
-class CafeForm(FlaskForm):
+class PlaceForm(FlaskForm):
     region = SelectField(
         'Область',
         choices=[('', 'Оберіть область'), ('Харківська', 'Харківська')],
@@ -142,6 +154,24 @@ class User(db.Model):
     email = db.Column(db.String(150), nullable=False, unique=True)  # Поле email
 
 
+def geocode_address(address):
+    retries = 3
+    while retries > 0:
+        try:
+            location = geolocator.geocode(address)
+            if location:
+                return location.latitude, location.longitude
+            else:
+                raise ValueError("Адрес не найден.")
+        except GeocoderTimedOut:
+            retries -= 1
+            print(f"Ошибка тайм-аута, пробуем снова...")
+            time.sleep(2)  # Задержка перед следующей попыткой
+        except Exception as e:
+            print(f"Ошибка: {e}")
+            break
+    return None, None
+
 # Добавить тестового пользователя при запуске приложения
 def create_initial_user():
     user = User.query.filter_by(username="Kirsanov Artem").first()
@@ -162,9 +192,14 @@ def index():
     for cafe in cafes:
         if cafe.latitude is not None and cafe.longitude is not None:
             try:
+                # Кастомная иконка для маркера
+                icon = folium.CustomIcon(icon_url='/static/coffee_cup.png', icon_size=(40, 40))
+
+                # Добавление маркера с иконкой чашки кофе
                 folium.Marker(
                     location=[float(cafe.latitude), float(cafe.longitude)],
                     popup=f"{cafe.name}<br>{cafe.address}<br>Рейтинг: {cafe.rating}",
+                    icon=icon
                 ).add_to(m)
             except ValueError:
                 app.logger.warning(f"Invalid coordinates for cafe: {cafe.name}")
@@ -305,47 +340,6 @@ def reject_place():
     return redirect(url_for('admin', category=category))
 
 
-@app.route('/approve_place', methods=['POST'])
-def approve_place_handler():
-    action = request.form['action']
-    place_id = request.form['place_id']
-
-    # Подключаемся к базе данных
-    conn = sqlite3.connect('cafes.db')
-    cursor = conn.cursor()
-
-    # Получаем информацию о месте
-    cursor.execute("SELECT name, address, description, city, region, type, place_index FROM request WHERE id=?", (place_id,))
-    place = cursor.fetchone()
-
-    if place:
-        # Используем уже существующий place_index
-        place_index = place[6]
-        type_place = place[5]  # Используем тип из таблицы запроса
-
-        # Добавление в соответствующую таблицу (cafes или restaurants)
-        if type_place == 'кафе':
-            cursor.execute(
-                "INSERT INTO cafes (name, address, description, city, region, place_index, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (place[0], place[1], place[2], place[3], place[4], place_index, type_place))
-        else:
-            cursor.execute(
-                "INSERT INTO restaurants (name, address, description, city, region, place_index, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (place[0], place[1], place[2], place[3], place[4], place_index, type_place))
-
-        # Удаляем место из таблицы request
-        cursor.execute("DELETE FROM request WHERE id=?", (place_id,))
-        conn.commit()
-
-        flash('Место добавлено успешно!', 'success')
-
-    else:
-        flash('Ошибка: место не найдено.', 'error')
-
-    conn.close()
-    return redirect(url_for('admin'))
-
-
 
 @app.route('/show_users')
 def show_users():
@@ -449,7 +443,7 @@ def admin():
 
 @app.route('/add_place', methods=['GET', 'POST'])
 def add_place():
-    form = CafeForm()
+    form = PlaceForm()
 
     if form.validate_on_submit():
         name = form.name.data
@@ -459,17 +453,25 @@ def add_place():
         region = form.region.data
         type_place = form.type.data
 
-        # Генерация place_index на основе региона, города и названия
+        # Генерация place_index
         place_index = f"{region}_{city}_{name}".lower().replace(" ", "_")
 
-        print(f"Добавляем в базу: {name}, {address}, {description}, {city}, {region}, {type_place}, {place_index}")
+        # Получаем координаты через геокодер
+        latitude, longitude = geocode_address(address)
+
+        # Если координаты не найдены, выдаём ошибку
+        if latitude is None or longitude is None:
+            flash('Не удалось найти координаты для данного адреса. Попробуйте другой адрес.', 'error')
+            return render_template('add_place.html', form=form)
+
+        print(f"Добавляем в базу: {name}, {address}, {description}, {city}, {region}, {type_place}, {place_index}, {latitude}, {longitude}")
 
         try:
             conn = sqlite3.connect(DB_PATH, timeout=10)
             cursor = conn.cursor()
             cursor.execute(
-                'INSERT INTO request (name, address, description, city, region, type, place_index) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                (name, address, description, city, region, type_place, place_index)
+                'INSERT INTO request (name, address, description, city, region, type, place_index, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (name, address, description, city, region, type_place, place_index, latitude, longitude)
             )
             conn.commit()
             print("Данные успешно добавлены в таблицу request")
@@ -483,6 +485,46 @@ def add_place():
         return redirect(url_for('index'))
 
     return render_template('add_place.html', form=form)
+
+@app.route('/approve_place', methods=['POST'])
+def approve_place_handler():
+    action = request.form['action']
+    place_id = request.form['place_id']
+
+    # Подключаемся к базе данных
+    conn = sqlite3.connect('cafes.db')
+    cursor = conn.cursor()
+
+    # Получаем информацию о месте
+    cursor.execute("SELECT name, address, description, city, region, type, place_index FROM request WHERE id=?", (place_id,))
+    place = cursor.fetchone()
+
+    if place:
+        # Используем уже существующий place_index
+        place_index = place[6]
+        type_place = place[5]  # Используем тип из таблицы запроса
+
+        # Добавление в соответствующую таблицу (cafes или restaurants)
+        if type_place == 'кафе':
+            cursor.execute(
+                "INSERT INTO cafes (name, address, description, city, region, place_index, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (place[0], place[1], place[2], place[3], place[4], place_index, type_place))
+        else:
+            cursor.execute(
+                "INSERT INTO restaurants (name, address, description, city, region, place_index, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (place[0], place[1], place[2], place[3], place[4], place_index, type_place))
+
+        # Удаляем место из таблицы request
+        cursor.execute("DELETE FROM request WHERE id=?", (place_id,))
+        conn.commit()
+
+        flash('Место добавлено успешно!', 'success')
+
+    else:
+        flash('Ошибка: место не найдено.', 'error')
+
+    conn.close()
+    return redirect(url_for('admin'))
 
 
 @app.route('/approve_place', methods=['POST'])
@@ -557,7 +599,6 @@ def test_request():
     conn.close()
     return str(places)
 
-"""
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
@@ -571,3 +612,4 @@ if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
 
+"""
