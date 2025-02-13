@@ -3,6 +3,7 @@ import os
 import sqlite3
 import folium
 import time
+import requests
 
 from datetime import datetime
 
@@ -38,21 +39,6 @@ geolocator = Nominatim(user_agent="your_app_name", timeout=10)
 
 
 def init_db():
-    # Создание таблицы пользователей
-    conn = sqlite3.connect(USERS_DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute(''' 
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            password TEXT,
-            email TEXT UNIQUE,
-            last_login TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
     # Создание таблиц для кафе, ресторанов и запросов
     conn = sqlite3.connect(DB_PATH)  # Подключение с полным путём
     cursor = conn.cursor()
@@ -67,7 +53,9 @@ def init_db():
             city TEXT NOT NULL,
             region TEXT NOT NULL,
             place_index TEXT NOT NULL,
-            type TEXT NOT NULL
+            type TEXT NOT NULL,
+            latitude REAL,
+            longitude REAL
         )
     ''')
 
@@ -81,7 +69,9 @@ def init_db():
             city TEXT NOT NULL,
             region TEXT NOT NULL,
             place_index TEXT NOT NULL,
-            type TEXT NOT NULL
+            type TEXT NOT NULL,
+            latitude REAL,
+            longitude REAL
         )
     ''')
 
@@ -95,7 +85,9 @@ def init_db():
             city TEXT NOT NULL,
             region TEXT NOT NULL,
             place_index TEXT NOT NULL,
-            type TEXT NOT NULL
+            type TEXT NOT NULL,
+            latitude REAL,
+            longitude REAL
         )
     ''')
     conn.commit()
@@ -154,52 +146,57 @@ class User(db.Model):
     email = db.Column(db.String(150), nullable=False, unique=True)  # Поле email
 
 
-def geocode_address(address):
-    retries = 3
-    while retries > 0:
-        try:
-            location = geolocator.geocode(address)
-            if location:
-                return location.latitude, location.longitude
-            else:
-                raise ValueError("Адрес не найден.")
-        except GeocoderTimedOut:
-            retries -= 1
-            print(f"Ошибка тайм-аута, пробуем снова...")
-            time.sleep(2)  # Задержка перед следующей попыткой
-        except Exception as e:
-            print(f"Ошибка: {e}")
-            break
-    return None, None
+def geocode_address(address, city, region):
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {
+        "q": f"{address}, {city}, {region}",
+        "format": "json",
+        "addressdetails": 1,
+        "limit": 1,
+    }
+    try:
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            data = response.json()
+            if data:
+                # Убедимся, что результат совпадает с городом и областью
+                result = data[0]
+                if (result.get("address", {}).get("city", "").lower() == city.lower() and
+                    result.get("address", {}).get("state", "").lower() == region.lower()):
+                    return float(result["lat"]), float(result["lon"])
+        # Если адрес не найден или данные не совпадают
+        return None, None
+    except Exception as e:
+        # Логирование ошибки
+        print(f"Ошибка при геокодировании: {e}")
+        return None, None
 
-# Добавить тестового пользователя при запуске приложения
-def create_initial_user():
-    user = User.query.filter_by(username="Kirsanov Artem").first()
-    if not user:
-        user = User(username="Kirsanov Artem", password="12")
-        db.session.add(user)
-        db.session.commit()
-        print("User 'Kirsanov Artem' has been created!")
 
+# Проверьте, чтобы координаты сохранялись в базу данных
 
 @app.route('/')
 def index():
     cafes = Cafe.query.all()
 
+    # Получаем параметры координат из URL
+    latitude = request.args.get('latitude', type=float)
+    longitude = request.args.get('longitude', type=float)
+
+    # Если координаты переданы, то центрируем карту на них
+    if latitude is not None and longitude is not None:
+        center_lat, center_lon = latitude, longitude
+    else:
+        center_lat, center_lon = 49.9935, 36.2304  # Дефолтные координаты Харькова
+
     # Создаем карту и добавляем маркеры для кафе
-    m = folium.Map(location=[49.9935, 36.2304], zoom_start=12)
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=12)
 
     for cafe in cafes:
         if cafe.latitude is not None and cafe.longitude is not None:
             try:
-                # Кастомная иконка для маркера
-                icon = folium.CustomIcon(icon_url='/static/coffee_cup.png', icon_size=(40, 40))
-
-                # Добавление маркера с иконкой чашки кофе
                 folium.Marker(
                     location=[float(cafe.latitude), float(cafe.longitude)],
                     popup=f"{cafe.name}<br>{cafe.address}<br>Рейтинг: {cafe.rating}",
-                    icon=icon
                 ).add_to(m)
             except ValueError:
                 app.logger.warning(f"Invalid coordinates for cafe: {cafe.name}")
@@ -208,7 +205,6 @@ def index():
 
     m.save("templates/map.html")
     return render_template('index.html', cafes=cafes)
-
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -364,6 +360,8 @@ def admin():
 
     # Обработка GET-запроса — отображаем разные категории
     category = request.args.get('category')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10  # Количество элементов на странице
 
     # Если категории нет, запрашиваем пароль
     if not category:
@@ -377,7 +375,7 @@ def admin():
     if category == "Запросы":
         conn = sqlite3.connect('cafes.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, address, description, city, region, type FROM request")
+        cursor.execute("SELECT id, name, address, description, city, region, type, latitude, longitude FROM request")
         places = cursor.fetchall()
         print("Запросы на одобрение:", places)  # Печать для отладки
         conn.close()
@@ -389,37 +387,59 @@ def admin():
                 "description": place[3],
                 "city": place[4],
                 "region": place[5],
-                "type": place[6]
+                "type": place[6],
+                "latitude": place[7],
+                "longitude": place[8]
             }
             for place in places
         ])
 
-    # Обработка категории "Кафе"
+    # Обработка категории "Кафе" с пагинацией
     if category == "Кафе":
         conn = sqlite3.connect('cafes.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, address, description, city, region, place_index, type FROM cafes")
+
+        # Получаем общее количество записей
+        cursor.execute("SELECT COUNT(*) FROM cafes")
+        total_places = cursor.fetchone()[0]
+
+        # Выборка записей для текущей страницы
+        offset = (page - 1) * per_page
+        cursor.execute(
+            "SELECT id, name, address, description, city, region, place_index, type, latitude, longitude FROM cafes LIMIT ? OFFSET ?",
+            (per_page, offset)
+        )
         places = cursor.fetchall()
         conn.close()
-        return render_template('admin_cafe.html', places=[
-            {
-                "id": place[0],
-                "name": place[1],
-                "address": place[2],
-                "description": place[3],
-                "city": place[4],
-                "region": place[5],
-                "place_index": place[6],
-                "type": place[7]
-            }
-            for place in places
-        ])
+
+        total_pages = (total_places + per_page - 1) // per_page  # Рассчитываем общее количество страниц
+
+        return render_template(
+            'admin_cafe.html',
+            places=[
+                {
+                    "id": place[0],
+                    "name": place[1],
+                    "address": place[2],
+                    "description": place[3],
+                    "city": place[4],
+                    "region": place[5],
+                    "place_index": place[6],
+                    "type": place[7],
+                    "latitude": place[8],
+                    "longitude": place[9]
+                }
+                for place in places
+            ],
+            page=page,
+            total_pages=total_pages
+        )
 
     # Обработка категории "Рестораны"
     if category == "Ресторан":
         conn = sqlite3.connect('cafes.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT id, name, address, description, city, region, place_index, type FROM restaurants")
+        cursor.execute("SELECT id, name, address, description, city, region, place_index, type, latitude, longitude FROM restaurants")
         places = cursor.fetchall()
         conn.close()
         return render_template('admin_restaurant.html', places=[
@@ -431,7 +451,9 @@ def admin():
                 "city": place[4],
                 "region": place[5],
                 "place_index": place[6],
-                "type": place[7]
+                "type": place[7],
+                "latitude": place[8],
+                "longitude": place[9]
             }
             for place in places
         ])
@@ -457,7 +479,9 @@ def add_place():
         place_index = f"{region}_{city}_{name}".lower().replace(" ", "_")
 
         # Получаем координаты через геокодер
-        latitude, longitude = geocode_address(address)
+        latitude, longitude = geocode_address(address, city, region)
+        if latitude is None or longitude is None:
+            return "Не удалось получить координаты. Проверьте адрес и попробуйте снова.", 400
 
         # Если координаты не найдены, выдаём ошибку
         if latitude is None or longitude is None:
@@ -487,7 +511,7 @@ def add_place():
     return render_template('add_place.html', form=form)
 
 @app.route('/approve_place', methods=['POST'])
-def approve_place_handler():
+def approve_place():
     action = request.form['action']
     place_id = request.form['place_id']
 
@@ -496,7 +520,7 @@ def approve_place_handler():
     cursor = conn.cursor()
 
     # Получаем информацию о месте
-    cursor.execute("SELECT name, address, description, city, region, type, place_index FROM request WHERE id=?", (place_id,))
+    cursor.execute("SELECT name, address, description, city, region, type, place_index, latitude, longitude FROM request WHERE id=?", (place_id,))
     place = cursor.fetchone()
 
     if place:
@@ -507,52 +531,12 @@ def approve_place_handler():
         # Добавление в соответствующую таблицу (cafes или restaurants)
         if type_place == 'кафе':
             cursor.execute(
-                "INSERT INTO cafes (name, address, description, city, region, place_index, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (place[0], place[1], place[2], place[3], place[4], place_index, type_place))
+                "INSERT INTO cafes (name, address, description, city, region, place_index, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (place[0], place[1], place[2], place[3], place[4], place_index, type_place, place[7], place[8]))
         else:
             cursor.execute(
-                "INSERT INTO restaurants (name, address, description, city, region, place_index, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (place[0], place[1], place[2], place[3], place[4], place_index, type_place))
-
-        # Удаляем место из таблицы request
-        cursor.execute("DELETE FROM request WHERE id=?", (place_id,))
-        conn.commit()
-
-        flash('Место добавлено успешно!', 'success')
-
-    else:
-        flash('Ошибка: место не найдено.', 'error')
-
-    conn.close()
-    return redirect(url_for('admin'))
-
-
-@app.route('/approve_place', methods=['POST'])
-def approve_place():
-    action = request.form['action']
-    place_id = request.form['place_id']
-
-    # Подключаемся к базе данных
-    conn = sqlite3.connect('cafes.db')
-    cursor = conn.cursor()
-
-    # Получаем информацию о месте
-    cursor.execute("SELECT name, address, description, city, region, type, place_index FROM request WHERE id=?", (place_id,))
-    place = cursor.fetchone()
-
-    if place:
-        # Используем уже существующий place_index
-        place_index = place[6]
-
-        # Добавление в соответствующую таблицу (cafes или restaurants)
-        if place[5] == 'кафе':
-            cursor.execute(
-                "INSERT INTO cafes (name, address, description, city, region, place_index) VALUES (?, ?, ?, ?, ?, ?)",
-                (place[0], place[1], place[2], place[3], place[4], place_index))
-        else:
-            cursor.execute(
-                "INSERT INTO restaurants (name, address, description, city, region, place_index) VALUES (?, ?, ?, ?, ?, ?)",
-                (place[0], place[1], place[2], place[3], place[4], place_index))
+                "INSERT INTO restaurants (name, address, description, city, region, place_index, type, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (place[0], place[1], place[2], place[3], place[4], place_index, type_place, place[8], place[9]))
 
         # Удаляем место из таблицы request
         cursor.execute("DELETE FROM request WHERE id=?", (place_id,))
@@ -577,6 +561,19 @@ def review():
         else:
             return 'Кафе не найдено!'
     return render_template('review.html', form=form)
+
+@app.route('/view_place')
+def view_place():
+    latitude = request.args.get('latitude', type=float)
+    longitude = request.args.get('longitude', type=float)
+    name = request.args.get('name', default="Место")
+
+    if latitude is None or longitude is None:
+        flash("Координаты не были переданы.", "error")
+        return redirect(url_for('index'))  # Перенаправляем на главную страницу, если координаты не переданы
+
+    return render_template('view_place.html', latitude=latitude, longitude=longitude, name=name)
+
 
 
 #DEBUG

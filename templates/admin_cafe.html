@@ -30,22 +30,30 @@
                         <input type="hidden" name="category" value="Кафе">
                         <button type="submit" name="action" value="reject">Отклонить</button>
                     </form>
+
+                    <!-- Кнопка "Посмотреть" -->
+                    {% if place.latitude and place.longitude %}
+                        <a href="{{ url_for('view_place') }}?latitude={{ place.latitude }}&longitude={{ place.longitude }}" style="display: inline;">
+                            <button type="button">Посмотреть на карте</button>
+                        </a>
+                    {% else %}
+                        <p style="color: red;">Координаты отсутствуют</p>
+                    {% endif %}
                 </div>
             {% else %}
                 <p>На данный момент нет добавленных кафе.</p>
             {% endfor %}
         </div>
-
     </div>
 
-    <div class="flash-container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <div class="pagination">
+        {% if page > 1 %}
+            <a href="{{ url_for('admin', category='Кафе', page=page-1) }}">← Назад</a>
+        {% endif %}
+        <span>Страница {{ page }} из {{ total_pages }}</span>
+        {% if page < total_pages %}
+            <a href="{{ url_for('admin', category='Кафе', page=page+1) }}">Вперед →</a>
+        {% endif %}
     </div>
 
     <form action="/admin" method="GET" style="margin-top: 20px;">
@@ -53,5 +61,14 @@
         <button type="submit" class="menu-button">Меню</button>
     </form>
 
+    <style>
+        .places-container {
+            max-height: 400px; /* Ограничение высоты */
+            overflow-y: auto; /* Прокрутка по вертикали */
+            border: 1px solid #ccc; /* Рамка для видимости */
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
 </body>
 </html>
